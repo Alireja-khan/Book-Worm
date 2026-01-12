@@ -1,5 +1,6 @@
 import ClientProvider from "@/ClientProvider";
 import type { Metadata } from "next";
+import { ThemeProvider } from "next-themes";
 
 export const metadata: Metadata = {
     title: "Create Next App",
@@ -13,9 +14,11 @@ export default function RootLayout({
 }>) {
     return (
         <main className="min-h-screen items-center justify-center">
-            <ClientProvider>
-                {children}
-            </ClientProvider>
+            <ThemeProvider>
+                <ClientProvider>
+                    {children}
+                </ClientProvider>
+            </ThemeProvider>
         </main>
     );
 }

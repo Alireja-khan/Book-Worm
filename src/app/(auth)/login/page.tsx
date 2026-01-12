@@ -23,7 +23,7 @@ try {
     }
   
     return (
-        <div className='min-h-screen flex items-center justify-center bg-black text-white px-4'>
+        <div className='min-h-screen flex items-center justify-center text-white px-4'>
             <div className='w-full max-w-md border-2 border-white rounded-2xl p-8 shadow-lg bg-gray-900'>
                 <h1 className='text-2xl font-semibold text-center mb-6'>Login</h1>
                 <form className='space-y-6' onSubmit={handleSignIn}>
