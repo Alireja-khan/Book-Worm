@@ -6,7 +6,8 @@ const nextConfig: NextConfig = {
       {
         hostname: "lh3.googleusercontent.com"
       },
-      { hostname: "res.cloudinary.com" }
+      { hostname: "res.cloudinary.com" },
+      { hostname: "images-na.ssl-images-amazon.com"}
 
     ]
   }

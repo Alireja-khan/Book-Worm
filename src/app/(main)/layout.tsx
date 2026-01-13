@@ -27,8 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
+      <div
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ClientProvider>
@@ -43,7 +42,6 @@ export default function RootLayout({
             <FooterSection></FooterSection>
           </ThemeProvider>
         </ClientProvider>
-      </body>
-    </html>
+      </div>
   );
 }
