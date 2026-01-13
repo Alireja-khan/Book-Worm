@@ -29,5 +29,5 @@ if(!token){
 }
 
 export const config ={
-matcher:"/((?!api|_next/static|_next/image|favicon.ico|node_modules).*)"
+matcher:'/((?!api|_next/static|_next/image|.*\\.png$).*)',
 }
