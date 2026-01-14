@@ -76,12 +76,29 @@ export async function GET(request: NextRequest) {
              logDate.getFullYear() === currentYear;
     }).length;
 
-    // Default reading goal
-    const readingGoal = {
+    // Default reading goal - will be overridden by stored Goal if present
+    // Try to fetch a saved goal for the current year (use `currentYear` declared above)
+    const Goal = (await import('@/model/Goal.model')).default;
+    let readingGoal = {
       target: 12, // Default 12 books per year
       progress: booksRead,
-      percentage: Math.round((booksRead / 12) * 100)
+      percentage: Math.round((booksRead / 12) * 100),
+      year: currentYear
     };
+
+    try {
+      const storedGoal = await Goal.findOne({ user: user._id, year: currentYear });
+      if (storedGoal) {
+        readingGoal = {
+          target: storedGoal.targetBooks,
+          progress: storedGoal.booksRead,
+          percentage: storedGoal.progressPercentage,
+          year: storedGoal.year
+        };
+      }
+    } catch (err) {
+      console.error('Error loading stored goal:', err);
+    }
 
     const stats = {
       totalBooks: readingLogs.length,

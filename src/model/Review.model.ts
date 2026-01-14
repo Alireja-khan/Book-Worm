@@ -62,7 +62,7 @@ reviewSchema.index({ createdAt: -1 });
 reviewSchema.index({ rating: -1 });
 
 // Pre-save hook for book rating updates
-reviewSchema.pre('save', async function (next) {
+reviewSchema.pre('save', async function () {
   try {
     // If this is a new review or rating changed, update book's average rating
     if (this.isNew || this.isModified('rating')) {
@@ -77,10 +77,10 @@ reviewSchema.pre('save', async function (next) {
       }
     }
 
-    next();
+    // For async pre hooks, do not use next(); throw on error instead
   } catch (error) {
     console.error('Error in review pre-save hook:', error);
-    next(error as mongoose.CallbackError);
+    throw error as mongoose.CallbackError;
   }
 });
 

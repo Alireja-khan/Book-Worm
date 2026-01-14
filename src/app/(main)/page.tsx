@@ -27,6 +27,7 @@ import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import Link from 'next/link';
 import BookCard from '@/components/books/BookCard';
+import RecommendationsList from '@/components/dashboard/Recommendations';
 
 interface Book {
   _id: string;
@@ -105,6 +106,15 @@ export default function DashboardPage() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
   const [trendingBooks, setTrendingBooks] = useState<Book[]>([]);
+
+  // Simple client-side helper to compute a match score for trending books
+  const computeMatchScoreFromBook = (book: Book) => {
+    const base = 60;
+    const ratingBonus = Math.min((book.averageRating || 0) * 4, 20);
+    const popularityBonus = Math.min((book.totalShelves || 0) / 100, 10);
+    const raw = base + ratingBonus + popularityBonus;
+    return Math.round(Math.min(Math.max(raw, 50), 98));
+  };
 
   useEffect(() => {
     if (session) {
@@ -366,56 +376,44 @@ export default function DashboardPage() {
                     </TabsList>
                     
                     <TabsContent value="for-you" className="space-y-4">
-                      {recommendations.map((rec) => (
-                        <div key={rec.book._id} className="flex gap-4 p-4 rounded-lg border hover:bg-accent/50 transition-colors">
-                          <div className="relative w-16 h-24 flex-shrink-0">
-                            <Image
-                              src={rec.book.coverImage}
-                              alt={rec.book.title}
-                              fill
-                              className="object-cover rounded"
-                              sizes="64px"
-                            />
+                      <RecommendationsList recommendations={recommendations} />
+                    </TabsContent>
+
+                    <TabsContent value="trending" className="space-y-4">
+                      {trendingBooks.length === 0 ? (
+                        <div className="text-center py-8">
+                          <div className="w-12 h-12 mx-auto mb-4 bg-secondary rounded-full flex items-center justify-center">
+                            <TrendingUp className="w-6 h-6 text-muted-foreground" />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <h4 className="font-semibold line-clamp-1">
-                                  <Link 
-                                    href={`/browse/${rec.book._id}`}
-                                    className="hover:text-primary transition-colors"
-                                  >
-                                    {rec.book.title}
-                                  </Link>
-                                </h4>
-                                <p className="text-sm text-muted-foreground mb-1">
-                                  by {rec.book.author}
-                                </p>
-                                <div className="flex items-center gap-2 mb-2">
-                                  <Badge variant="secondary" className="text-xs">
-                                    {rec.book.genre?.name}
-                                  </Badge>
-                                  <div className="flex items-center gap-1">
-                                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                                    <span className="text-xs font-medium">
-                                      {rec.book.averageRating.toFixed(1)}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                              <Badge 
-                                variant="outline" 
-                                className="text-xs bg-primary/10 text-primary"
-                              >
-                                {rec.matchScore}% match
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              <span className="font-medium">Why we recommend:</span> {rec.reason}
-                            </p>
-                          </div>
+                          <h3 className="font-semibold mb-2">No trending books</h3>
+                          <p className="text-muted-foreground">Trending books will appear here when available</p>
                         </div>
-                      ))}
+                      ) : (
+                        <RecommendationsList
+                          recommendations={trendingBooks.slice(0, 12).map(book => ({
+                            book,
+                            reason: 'Trending now',
+                            reasonDetails: { popularity: book.totalShelves, communityRating: book.averageRating },
+                            matchScore: computeMatchScoreFromBook(book)
+                          }))}
+                        />
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="similar" className="space-y-4">
+                      {recommendations.filter(r => r.reason && r.reason.includes('Similar') || (r.reasonDetails && r.reasonDetails.matchedGenre)).length === 0 ? (
+                        <div className="text-center py-8">
+                          <div className="w-12 h-12 mx-auto mb-4 bg-secondary rounded-full flex items-center justify-center">
+                            <BookOpen className="w-6 h-6 text-muted-foreground" />
+                          </div>
+                          <h3 className="font-semibold mb-2">No similar recommendations</h3>
+                          <p className="text-muted-foreground">We couldn't find books that closely match your taste yet</p>
+                        </div>
+                      ) : (
+                        <RecommendationsList
+                          recommendations={recommendations.filter(r => (r.reasonDetails && r.reasonDetails.matchedGenre)).slice(0, 12)}
+                        />
+                      )}
                     </TabsContent>
                   </Tabs>
                 </div>

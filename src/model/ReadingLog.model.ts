@@ -84,7 +84,7 @@ readingLogSchema.index({ user: 1, status: 1 });
 readingLogSchema.index({ finishDate: -1 });
 
 // Middleware to calculate progress and handle shelf changes
-readingLogSchema.pre('save', async function (next) {
+readingLogSchema.pre('save', async function () {
   try {
     // Set start date when moving to currently_reading or read
     if (this.isModified('shelf') && !this.startDate) {
@@ -128,10 +128,10 @@ readingLogSchema.pre('save', async function (next) {
       this.progressPercentage = 0;
     }
 
-    next();
+    // For async pre hooks, don't use next(); throw errors instead to reject the save
   } catch (error) {
     console.error('Error in readingLog pre-save hook:', error);
-    next(error as mongoose.CallbackError);
+    throw error as mongoose.CallbackError;
   }
 });
 
