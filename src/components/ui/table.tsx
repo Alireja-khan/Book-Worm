@@ -63,10 +63,11 @@ function TableRow({
   )
 }
 
+// FIXED: Changed HTMLTableSectionElement to HTMLTableHeaderCellElement
 function TableHead({
   className,
   ...props
-}: React.ThHTMLAttributes<HTMLTableSectionElement>) {
+}: React.ThHTMLAttributes<HTMLTableHeaderCellElement>) {
   return (
     <th
       className={cn(
@@ -78,10 +79,11 @@ function TableHead({
   )
 }
 
+// FIXED: Changed HTMLTableSectionElement to HTMLTableDataCellElement
 function TableCell({
   className,
   ...props
-}: React.TdHTMLAttributes<HTMLTableSectionElement>) {
+}: React.TdHTMLAttributes<HTMLTableDataCellElement>) {
   return (
     <td
       className={cn(
