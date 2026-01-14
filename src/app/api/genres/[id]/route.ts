@@ -5,12 +5,12 @@ import Book from '@/model/Book.model';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDb();
     
-    const { id } = params;
+    const { id } = await params;
     const data = await request.json();
     const { name, description } = data;
 
@@ -78,12 +78,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDb();
     
-    const { id } = params;
+    const { id } = await params;
 
     // Check if genre exists
     const genre = await Genre.findById(id);

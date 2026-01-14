@@ -10,13 +10,10 @@ import { getServerSession } from 'next-auth';
 import authOptions from '@/lib/auth';
 import uploadOnCloudinary from '@/lib/cloudinary';
 
-interface Params {
-  params: {
-    id: string;
-  };
-} 
-
-export async function GET(request: NextRequest, { params }: Params) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await params;
     console.log('Fetching book with ID:', id);
@@ -96,7 +93,10 @@ export async function GET(request: NextRequest, { params }: Params) {
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: Params) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await params;
     
@@ -164,7 +164,10 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 }
 
 // PUT method for updating book
-export async function PUT(request: NextRequest, { params }: Params) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await params;
     
