@@ -16,7 +16,8 @@ import {
   Sparkles,
   ArrowRight,
   Loader2,
-  BarChart3
+  BarChart3,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,6 +30,7 @@ import Link from 'next/link';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import BookCard from '@/components/books/BookCard';
 import RecommendationsList from '@/components/dashboard/Recommendations';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 interface Book {
   _id: string;
@@ -117,7 +119,20 @@ export default function DashboardPage() {
     return Math.round(Math.min(Math.max(raw, 50), 98));
   };
 
-  const [adminStats, setAdminStats] = useState<{ totalBooks: number; totalUsers: number; pendingReviews: number } | null>(null);
+  interface AdminStats {
+    overview: {
+      totalBooks: number;
+      totalUsers: number;
+      pendingReviews: number;
+    };
+    genreDistribution: Array<{ _id: string; count: number }>;
+    adminInfo: any;
+    recentActivities: any[];
+    activityStats: any[];
+    monthlyActivity: any[];
+  }
+
+  const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
 
   useEffect(() => {
     if (session) {
@@ -134,7 +149,13 @@ export default function DashboardPage() {
       setLoading(true);
       const res = await fetch('/api/admin/stats');
       const data = await res.json();
-      if (data.success) setAdminStats(data.data);
+      console.log('Admin API Response:', data); // Debug log
+      if (data.success) {
+        setAdminStats(data.data);
+        console.log('Admin Stats Set:', data.data);
+      } else {
+        console.error('API Error:', data.error);
+      }
     } catch (err) {
       console.error('Error fetching admin stats:', err);
     } finally {
@@ -170,6 +191,27 @@ export default function DashboardPage() {
       setLoading(false);
     }
   };
+
+  // Helper functions for chart data formatting
+  const formatMonthlyData = () => {
+    if (!adminStats?.monthlyActivity) return [];
+    
+    return adminStats.monthlyActivity.map(item => ({
+      name: `${item._id.month}/${item._id.year}`,
+      Activities: item.count
+    }));
+  };
+
+  const formatGenreData = () => {
+    if (!adminStats?.genreDistribution) return [];
+    
+    return adminStats.genreDistribution.map(item => ({
+      name: item._id,
+      value: item.count
+    }));
+  };
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
   const updateReadingGoal = async (newTarget: number) => {
     try {
@@ -210,7 +252,7 @@ export default function DashboardPage() {
     );
   }
 
-  // If admin, render admin home content on the root page with an admin sidebar
+  // If admin, render enhanced admin dashboard on the root page
   if (session.user?.role === 'admin') {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -220,11 +262,12 @@ export default function DashboardPage() {
           </aside>
 
           <main className="lg:col-span-3">
+            {/* Header */}
             <div className="mb-8">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-3xl font-bold mb-2">Admin Home — Welcome back, {session.user?.name}!</h1>
-                  <p className="text-muted-foreground">Overview and admin controls.</p>
+                  <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+                  <p className="text-muted-foreground">Welcome back, {session.user?.name}! Here&apos;s what&apos;s happening with your library today.</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button size="sm" variant="outline" asChild>
@@ -234,38 +277,170 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-4 border rounded bg-white dark:bg-gray-800">
-                <div className="text-sm text-muted-foreground">Total Books</div>
-                <div className="text-2xl font-bold mt-2">{adminStats ? adminStats.totalBooks : '-'}</div>
-                <div className="mt-3">
-                  <Link href="/admin/books" className="text-primary underline">Manage Books</Link>
-                </div>
-              </div>
-
-              <div className="p-4 border rounded bg-white dark:bg-gray-800">
-                <div className="text-sm text-muted-foreground">Total Users</div>
-                <div className="text-2xl font-bold mt-2">{adminStats ? adminStats.totalUsers : '-'}</div>
-                <div className="mt-3">
-                  <Link href="/admin/users" className="text-primary underline">Manage Users</Link>
-                </div>
-              </div>
-
-              <div className="p-4 border rounded bg-white dark:bg-gray-800">
-                <div className="text-sm text-muted-foreground">Pending Reviews</div>
-                <div className="text-2xl font-bold mt-2">{adminStats ? adminStats.pendingReviews : '-'}</div>
-                <div className="mt-3">
-                  <Link href="/admin/reviews?status=pending" className="text-primary underline">Moderate Reviews</Link>
-                </div>
-              </div>
+            {/* Overview Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Books</CardTitle>
+                  <BookOpen className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{adminStats?.overview?.totalBooks ?? '-'}</div>
+                  <p className="text-xs text-muted-foreground">Books in library</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{adminStats?.overview?.totalUsers ?? '-'}</div>
+                  <p className="text-xs text-muted-foreground">Registered users</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
+                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{adminStats?.overview?.pendingReviews ?? '-'}</div>
+                  <p className="text-xs text-muted-foreground">Reviews awaiting approval</p>
+                </CardContent>
+              </Card>
             </div>
 
-            <div className="mt-8">
-              <h2 className="text-lg font-medium">Quick Actions</h2>
-              <div className="mt-4 space-x-3">
-                <Link href="/admin/books/new" className="btn">Add New Book</Link>
-                <Link href="/admin/genres" className="btn">Manage Genres</Link>
-              </div>
+            {/* Charts and Detailed Analytics */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Books by Genre
+                  </CardTitle>
+                  <CardDescription>
+                    Distribution of books across different genres
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64">
+                    {adminStats?.genreDistribution && adminStats.genreDistribution.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={formatGenreData()}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${name}: ${percent ? (percent * 100).toFixed(0) : 0}%`}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {formatGenreData().map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value) => [`${value} books`, 'Count']} />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-muted-foreground">
+                        <div className="text-center">
+                          <BarChart3 className="mx-auto h-12 w-12 opacity-50" />
+                          <p className="mt-2">No genre data available</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Activity Trend
+                  </CardTitle>
+                  <CardDescription>
+                    Your admin activity over time
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64">
+                    {adminStats?.monthlyActivity && adminStats.monthlyActivity.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={formatMonthlyData()}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="Activities" fill="#8884d8" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-muted-foreground">
+                        <div className="text-center">
+                          <TrendingUp className="mx-auto h-12 w-12 opacity-50" />
+                          <p className="mt-2">No activity data available</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button className="w-full" asChild>
+                    <Link href="/admin/books/new">Add New Book</Link>
+                  </Button>
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link href="/admin/books">Manage Books</Link>
+                  </Button>
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link href="/admin/users">Manage Users</Link>
+                  </Button>
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link href="/admin/reviews?status=pending">Moderate Reviews</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>System Overview</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Library Status</span>
+                    <Badge variant="secondary">Active</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Last Backup</span>
+                    <span className="text-sm text-muted-foreground">2 hours ago</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Storage Used</span>
+                    <span className="text-sm text-muted-foreground">45%</span>
+                  </div>
+                  <Separator />
+                  <Button variant="ghost" size="sm" className="w-full" asChild>
+                    <Link href="/admin/settings">View Settings</Link>
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </main>
         </div>

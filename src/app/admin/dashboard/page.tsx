@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 
 export default function AdminDashboardRedirect() {
-  // Dashboard page removed — send users to the root where admin home is displayed
+  // Admin dashboard is now integrated into the root page (/)
+  // Redirect to root where the enhanced admin dashboard is displayed
   redirect('/');
 }
