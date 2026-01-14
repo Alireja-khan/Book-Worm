@@ -64,25 +64,98 @@ reviewSchema.index({ rating: -1 });
 // Pre-save hook for book rating updates
 reviewSchema.pre('save', async function () {
   try {
+    // Cast 'this' to any to avoid TypeScript issues
+    const doc = this as any;
+    
     // If this is a new review or rating changed, update book's average rating
-    if (this.isNew || this.isModified('rating')) {
-      await this.updateBookAverageRating();
+    if (doc.isNew || doc.isModified('rating')) {
+      // Call updateBookAverageRating method
+      await doc.updateBookAverageRating();
     }
 
     // Auto-approve reviews from admins
-    if (this.isNew) {
-      const user = await mongoose.models.User.findById(this.user);
+    if (doc.isNew) {
+      const user = await mongoose.models.User.findById(doc.user);
       if (user?.role === 'admin') {
-        this.status = 'approved';
+        doc.status = 'approved';
       }
     }
 
-    // For async pre hooks, do not use next(); throw on error instead
   } catch (error) {
     console.error('Error in review pre-save hook:', error);
-    throw error as mongoose.CallbackError;
+    throw error;
   }
 });
+
+// Instance method to update book's average rating
+reviewSchema.methods.updateBookAverageRating = async function () {
+  try {
+    const doc = this as any;
+    const Review = mongoose.models.Review;
+    const reviews = await Review.find({ 
+      book: doc.book, 
+      status: 'approved' 
+    });
+
+    if (reviews.length > 0) {
+      const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+      const averageRating = totalRating / reviews.length;
+      
+      await mongoose.models.Book.findByIdAndUpdate(doc.book, {
+        averageRating: parseFloat(averageRating.toFixed(1))
+      });
+    } else {
+      // If no approved reviews, use this review's rating
+      await mongoose.models.Book.findByIdAndUpdate(doc.book, {
+        averageRating: doc.rating
+      });
+    }
+  } catch (error) {
+    console.error('Error updating book average rating:', error);
+  }
+};
+
+// Static method to approve a review
+reviewSchema.statics.approveReview = async function (reviewId: string) {
+  try {
+    const review = await this.findByIdAndUpdate(
+      reviewId,
+      { status: 'approved' },
+      { new: true }
+    );
+
+    if (review) {
+      // Recalculate book's average rating
+      await (review as any).updateBookAverageRating();
+    }
+
+    return review;
+  } catch (error) {
+    console.error('Error approving review:', error);
+    throw error;
+  }
+};
+
+// Static method to reject a review
+reviewSchema.statics.rejectReview = async function (reviewId: string) {
+  try {
+    const review = await this.findByIdAndUpdate(
+      reviewId,
+      { status: 'rejected' },
+      { new: true }
+    );
+
+    if (review) {
+      // Recalculate book's average rating
+      await (review as any).updateBookAverageRating();
+    }
+
+    return review;
+  } catch (error) {
+    console.error('Error rejecting review:', error);
+    throw error;
+  }
+};
 
 // Post-save hook for activity logging
 reviewSchema.post('save', async function (doc) {
@@ -91,7 +164,7 @@ reviewSchema.post('save', async function (doc) {
     const { activityHelpers } = await import('@/lib/activity');
     
     // Log activity for new reviews
-    if (this.isNew) {
+    if ((this as any).isNew) {
       await activityHelpers.logWroteReview(
         doc.user.toString(),
         doc.book.toString(),
@@ -100,7 +173,7 @@ reviewSchema.post('save', async function (doc) {
     }
 
     // Log activity for ratings (both new and updated)
-    if (this.isNew || this.isModified('rating')) {
+    if ((this as any).isNew || (this as any).isModified('rating')) {
       await activityHelpers.logRatedBook(
         doc.user.toString(),
         doc.book.toString(),
@@ -109,7 +182,7 @@ reviewSchema.post('save', async function (doc) {
     }
 
     // Update book's totalReviews count for new reviews
-    if (this.isNew) {
+    if ((this as any).isNew) {
       await mongoose.models.Book.findByIdAndUpdate(doc.book, {
         $inc: { totalReviews: 1 }
       });
@@ -154,74 +227,7 @@ reviewSchema.post('findOneAndDelete', async function (doc) {
   }
 });
 
-// Instance method to update book's average rating
-reviewSchema.methods.updateBookAverageRating = async function () {
-  try {
-    const Review = mongoose.models.Review;
-    const reviews = await Review.find({ 
-      book: this.book, 
-      status: 'approved' 
-    });
-
-    if (reviews.length > 0) {
-      const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
-      const averageRating = totalRating / reviews.length;
-      
-      await mongoose.models.Book.findByIdAndUpdate(this.book, {
-        averageRating: parseFloat(averageRating.toFixed(1))
-      });
-    } else {
-      // If no approved reviews, use this review's rating
-      await mongoose.models.Book.findByIdAndUpdate(this.book, {
-        averageRating: this.rating
-      });
-    }
-  } catch (error) {
-    console.error('Error updating book average rating:', error);
-  }
-};
-
-// Static method to approve a review
-reviewSchema.statics.approveReview = async function (reviewId: string) {
-  try {
-    const review = await this.findByIdAndUpdate(
-      reviewId,
-      { status: 'approved' },
-      { new: true }
-    );
-
-    if (review) {
-      // Recalculate book's average rating
-      await review.updateBookAverageRating();
-    }
-
-    return review;
-  } catch (error) {
-    console.error('Error approving review:', error);
-    throw error;
-  }
-};
-
-// Static method to reject a review
-reviewSchema.statics.rejectReview = async function (reviewId: string) {
-  try {
-    const review = await this.findByIdAndUpdate(
-      reviewId,
-      { status: 'rejected' },
-      { new: true }
-    );
-
-    if (review) {
-      // Recalculate book's average rating
-      await review.updateBookAverageRating();
-    }
-
-    return review;
-  } catch (error) {
-    console.error('Error rejecting review:', error);
-    throw error;
-  }
-};
-
+// Simple model creation without complex types
 const Review = mongoose.models.Review || mongoose.model<IReview>('Review', reviewSchema);
+
 export default Review;
