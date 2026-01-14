@@ -45,7 +45,8 @@ const readingLogSchema = new mongoose.Schema<IReadingLog>(
       type: Number,
       min: 0,
       validate: {
-        validator: function (this: IReadingLog, value: number) {
+        // FIXED: Removed the explicit 'this' typing from the function
+        validator: function (value: number) {
           if (this.shelf === 'currently_reading') {
             return value > 0;
           }
@@ -84,59 +85,61 @@ readingLogSchema.index({ user: 1, status: 1 });
 readingLogSchema.index({ finishDate: -1 });
 
 // Middleware to calculate progress and handle shelf changes
-readingLogSchema.pre('save', async function () {
+readingLogSchema.pre('save', async function (next) {
   try {
+    const doc = this as mongoose.Document & IReadingLog;
+    
     // Set start date when moving to currently_reading or read
-    if (this.isModified('shelf') && !this.startDate) {
-      if (this.shelf === 'currently_reading' || this.shelf === 'read') {
-        this.startDate = new Date();
+    if (this.isModified('shelf') && !doc.startDate) {
+      if (doc.shelf === 'currently_reading' || doc.shelf === 'read') {
+        doc.startDate = new Date();
       }
     }
 
     // Calculate progress percentage for currently reading books
-    if (this.shelf === 'currently_reading' && this.currentPage) {
-      const book = await mongoose.models.Book.findById(this.book);
-      if (book && book.pages && book.pages > 0) {
-        const calculatedProgress = Math.round((this.currentPage / book.pages) * 100);
-        this.progressPercentage = Math.min(calculatedProgress, 100);
-        this.status = 'reading';
+    if (doc.shelf === 'currently_reading' && doc.currentPage) {
+      const book = await mongoose.models.Book.findById(doc.book);
+      if (book && (book as any).pages && (book as any).pages > 0) {
+        const calculatedProgress = Math.round((doc.currentPage / (book as any).pages) * 100);
+        doc.progressPercentage = Math.min(calculatedProgress, 100);
+        doc.status = 'reading';
       }
     }
 
     // Handle read shelf changes
-    if (this.shelf === 'read') {
-      this.status = 'finished';
-      this.progressPercentage = 100;
+    if (doc.shelf === 'read') {
+      doc.status = 'finished';
+      doc.progressPercentage = 100;
       
       // If currentPage is not set, try to get book pages
-      if (!this.currentPage) {
-        const book = await mongoose.models.Book.findById(this.book);
-        if (book?.pages) {
-          this.currentPage = book.pages;
+      if (!doc.currentPage) {
+        const book = await mongoose.models.Book.findById(doc.book);
+        if (book && (book as any).pages) {
+          doc.currentPage = (book as any).pages;
         }
       }
       
-      if (!this.finishDate) {
-        this.finishDate = new Date();
+      if (!doc.finishDate) {
+        doc.finishDate = new Date();
       }
     }
 
     // Handle want_to_read shelf
-    if (this.shelf === 'want_to_read') {
-      this.status = 'not_started';
-      this.currentPage = 0;
-      this.progressPercentage = 0;
+    if (doc.shelf === 'want_to_read') {
+      doc.status = 'not_started';
+      doc.currentPage = 0;
+      doc.progressPercentage = 0;
     }
 
-    // For async pre hooks, don't use next(); throw errors instead to reject the save
+    next();
   } catch (error) {
     console.error('Error in readingLog pre-save hook:', error);
-    throw error as mongoose.CallbackError;
+    next(error as mongoose.CallbackError);
   }
 });
 
 // Post-save hook for activity logging
-readingLogSchema.post('save', async function (doc) {
+readingLogSchema.post('save', async function (doc: IReadingLog & mongoose.Document) {
   try {
     // Only log activity if this is a new log or shelf was modified
     if (this.isNew || this.isModified('shelf')) {
@@ -155,7 +158,7 @@ readingLogSchema.post('save', async function (doc) {
         await activityHelpers.logFinishedReading(
           doc.user.toString(),
           doc.book.toString(),
-          book?.pages
+          (book as any)?.pages
         );
       }
     }
@@ -174,7 +177,7 @@ readingLogSchema.post('save', async function (doc) {
 });
 
 // Post-remove hook to update book's totalShelves count
-readingLogSchema.post('findOneAndDelete', async function (doc) {
+readingLogSchema.post('findOneAndDelete', async function (doc: IReadingLog) {
   try {
     if (doc) {
       await mongoose.models.Book.findByIdAndUpdate(doc.book, {

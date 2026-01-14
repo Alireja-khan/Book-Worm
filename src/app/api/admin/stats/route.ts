@@ -16,14 +16,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Ensure DB connection
-    await connectDb();
-    
     // Verify admin
     const user = await User.findOne({ email: session.user.email }).select('role');
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
     }
+
+    await connectDb();
 
     // Get basic stats
     const [totalBooks, totalUsers, pendingReviews] = await Promise.all([
