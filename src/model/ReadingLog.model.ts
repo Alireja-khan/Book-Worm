@@ -83,28 +83,107 @@ readingLogSchema.index({ user: 1, shelf: 1 });
 readingLogSchema.index({ user: 1, status: 1 });
 readingLogSchema.index({ finishDate: -1 });
 
-// Calculate progress percentage before save
+// Middleware to calculate progress and handle shelf changes
 readingLogSchema.pre('save', async function (next) {
-  if (this.shelf === 'currently_reading' && this.currentPage) {
-    try {
-      const book = await mongoose.models.Book.findById(this.book);
-      if (book && book.pages) {
-        this.progressPercentage = Math.round((this.currentPage / book.pages) * 100);
+  try {
+    // Set start date when moving to currently_reading or read
+    if (this.isModified('shelf') && !this.startDate) {
+      if (this.shelf === 'currently_reading' || this.shelf === 'read') {
+        this.startDate = new Date();
       }
-    } catch (error) {
-      // Continue without progress calculation
     }
-  }
-  
-  if (this.shelf === 'read') {
-    this.status = 'finished';
-    this.progressPercentage = 100;
-    if (!this.finishDate) {
-      this.finishDate = new Date();
+
+    // Calculate progress percentage for currently reading books
+    if (this.shelf === 'currently_reading' && this.currentPage) {
+      const book = await mongoose.models.Book.findById(this.book);
+      if (book && book.pages && book.pages > 0) {
+        const calculatedProgress = Math.round((this.currentPage / book.pages) * 100);
+        this.progressPercentage = Math.min(calculatedProgress, 100);
+        this.status = 'reading';
+      }
     }
+
+    // Handle read shelf changes
+    if (this.shelf === 'read') {
+      this.status = 'finished';
+      this.progressPercentage = 100;
+      
+      // If currentPage is not set, try to get book pages
+      if (!this.currentPage) {
+        const book = await mongoose.models.Book.findById(this.book);
+        if (book?.pages) {
+          this.currentPage = book.pages;
+        }
+      }
+      
+      if (!this.finishDate) {
+        this.finishDate = new Date();
+      }
+    }
+
+    // Handle want_to_read shelf
+    if (this.shelf === 'want_to_read') {
+      this.status = 'not_started';
+      this.currentPage = 0;
+      this.progressPercentage = 0;
+    }
+
+    next();
+  } catch (error) {
+    console.error('Error in readingLog pre-save hook:', error);
+    next(error as mongoose.CallbackError);
   }
-  
-  next();
+});
+
+// Post-save hook for activity logging
+readingLogSchema.post('save', async function (doc) {
+  try {
+    // Only log activity if this is a new log or shelf was modified
+    if (this.isNew || this.isModified('shelf')) {
+      // Import activity helpers dynamically to avoid circular dependencies
+      const { activityHelpers } = await import('@/lib/activity');
+      
+      await activityHelpers.logAddedToShelf(
+        doc.user.toString(),
+        doc.book.toString(),
+        doc.shelf
+      );
+
+      // Special logging for finished reading
+      if (doc.shelf === 'read' && this.isModified('shelf')) {
+        const book = await mongoose.models.Book.findById(doc.book);
+        await activityHelpers.logFinishedReading(
+          doc.user.toString(),
+          doc.book.toString(),
+          book?.pages
+        );
+      }
+    }
+
+    // Update book's totalShelves count
+    if (this.isNew) {
+      await mongoose.models.Book.findByIdAndUpdate(doc.book, {
+        $inc: { totalShelves: 1 }
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error in readingLog post-save hook:', error);
+    // Don't throw to avoid breaking the save operation
+  }
+});
+
+// Post-remove hook to update book's totalShelves count
+readingLogSchema.post('findOneAndDelete', async function (doc) {
+  try {
+    if (doc) {
+      await mongoose.models.Book.findByIdAndUpdate(doc.book, {
+        $inc: { totalShelves: -1 }
+      });
+    }
+  } catch (error) {
+    console.error('Error updating book shelves count after delete:', error);
+  }
 });
 
 const ReadingLog = mongoose.models.ReadingLog || mongoose.model<IReadingLog>('ReadingLog', readingLogSchema);

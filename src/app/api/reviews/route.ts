@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth';
 import connectDb from '@/lib/db';
 import Review, { ReviewStatus } from '@/model/Review.model';
 import Book from '@/model/Book.model';
-import User from '@/model/User.model';
+import User from '@/model/user.model';
 import ReadingLog from '@/model/ReadingLog.model';
 import Activity from '@/model/Activity.model';
 import authOptions from '@/lib/auth';

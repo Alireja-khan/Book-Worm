@@ -79,7 +79,7 @@ const userSchema = new mongoose.Schema<IUser>(
 );
 
 // Indexes
-userSchema.index({ email: 1 }, { unique: true });
+// Unique email is declared on the field via `unique: true`, so no separate index needed here.
 userSchema.index({ role: 1 });
 userSchema.index({ 'readingStats.totalBooksRead': -1 });
 

@@ -1,4 +1,10 @@
-import { connect } from "mongoose"
+import { connect } from "mongoose";
+import '@/model/Genre.model';
+import '@/model/Book.model';
+import '@/model/ReadingLog.model';
+import '@/model/Review.model';
+import '@/model/user.model';
+import '@/model/Activity.model';
 
 const mongodbUrl=process.env.MONGODB_URL!
 if(!mongodbUrl){

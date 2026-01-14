@@ -19,6 +19,7 @@ interface ProgressTrackerProps {
     _id: string;
     currentPage?: number;
     progressPercentage?: number;
+    book?: { _id: string } | string | null;
   };
   bookPages: number;
   onProgressUpdate: () => void;
@@ -64,13 +65,20 @@ export default function ProgressTracker({
     try {
       setIsUpdating(true);
       
+          // Determine bookId from the populated readingLog.book (preferred)
+      const bookId = (readingLog as any).book?._id || (readingLog as any).book;
+      if (!bookId) {
+        console.error('Book ID not found on readingLog:', readingLog);
+        throw new Error('Book ID not found on reading log');
+      }
+
       const response = await fetch('/api/reading-log', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          bookId: readingLog._id.split('_')[0], // Extract book ID from reading log ID
+          bookId,
           currentPage: page
         }),
       });
