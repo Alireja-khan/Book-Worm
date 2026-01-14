@@ -43,19 +43,9 @@ const readingLogSchema = new mongoose.Schema<IReadingLog>(
     },
     currentPage: {
       type: Number,
-      min: 0,
-      // FIXED: Use arrow function to preserve 'this' context from parent scope
-      validate: {
-        validator: function (value: number) {
-          // Cast 'this' to any to bypass TypeScript's strict checking
-          const doc = this as any;
-          if (doc.shelf === 'currently_reading') {
-            return value > 0;
-          }
-          return true;
-        },
-        message: 'Current page is required for currently reading books'
-      }
+      min: 0
+      // Removed validator to fix TypeScript issues
+      // Validation handled in pre-save middleware
     },
     startDate: {
       type: Date
@@ -87,10 +77,15 @@ readingLogSchema.index({ user: 1, status: 1 });
 readingLogSchema.index({ finishDate: -1 });
 
 // Middleware to calculate progress and handle shelf changes
-readingLogSchema.pre('save', async function (next) {
+readingLogSchema.pre('save', async function () {
   try {
     const doc = this as any;
     
+    // Validate currentPage when shelf is 'currently_reading'
+    if (doc.shelf === 'currently_reading' && (!doc.currentPage || doc.currentPage <= 0)) {
+      throw new Error('Current page is required for currently reading books');
+    }
+
     // Set start date when moving to currently_reading or read
     if (this.isModified('shelf') && !doc.startDate) {
       if (doc.shelf === 'currently_reading' || doc.shelf === 'read') {
@@ -133,10 +128,12 @@ readingLogSchema.pre('save', async function (next) {
       doc.progressPercentage = 0;
     }
 
-    next();
+    // No need to call next() in async pre-save hooks
+    // Mongoose will wait for the promise to resolve
+
   } catch (error) {
     console.error('Error in readingLog pre-save hook:', error);
-    next(error as any);
+    throw error; // Throw error to reject the save operation
   }
 });
 
