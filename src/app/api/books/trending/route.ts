@@ -38,10 +38,21 @@ export async function GET(request: NextRequest) {
           as: 'recentReviews'
         }
       },
-      // Add fields for sorting
+      // Add fields for sorting - FIXED THIS SECTION
       {
         $addFields: {
-          recentReviewCount: { $arrayElemAt: ['$recentReviews.recentReviewCount', 0] } || 0,
+          recentReviewCount: {
+            $cond: {
+              if: { $gt: [{ $size: '$recentReviews' }, 0] },
+              then: { $arrayElemAt: ['$recentReviews.recentReviewCount', 0] },
+              else: 0
+            }
+          }
+        }
+      },
+      // Calculate popularity score
+      {
+        $addFields: {
           popularityScore: {
             $add: [
               { $multiply: ['$averageRating', 20] }, // Rating weight (0-100)
