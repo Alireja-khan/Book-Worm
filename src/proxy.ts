@@ -2,10 +2,6 @@ import { url } from "inspector";
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
-
-
-
-
 export async function proxy(req:NextRequest){
    const {pathname}=req.nextUrl
    const publicRoutes=[

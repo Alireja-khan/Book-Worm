@@ -1,3 +1,4 @@
+// src/model/Book.model.ts - UPDATED
 import mongoose from 'mongoose';
 
 interface IBook {
@@ -5,15 +6,15 @@ interface IBook {
   title: string;
   author: string;
   description: string;
-  coverImage: string; // Cloudinary URL or local path
-  genre: mongoose.Types.ObjectId; // Reference to Genre
+  coverImage: string;
+  genre: mongoose.Types.ObjectId;
   pages: number;
   publicationYear: number;
   publisher?: string;
   isbn?: string;
-  averageRating?: number; // Calculated field
-  totalReviews?: number; // Calculated field
-  totalShelves?: number; // Sum of all shelves (for popularity)
+  averageRating?: number;
+  totalReviews?: number;
+  totalShelves?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -72,7 +73,7 @@ const bookSchema = new mongoose.Schema<IBook>(
       type: String,
       trim: true,
       unique: true,
-      sparse: true // Allows multiple null values but enforces uniqueness for non-null
+      sparse: true
     },
     averageRating: {
       type: Number,
@@ -89,8 +90,28 @@ const bookSchema = new mongoose.Schema<IBook>(
       default: 0
     }
   },
-  { timestamps: true }
+  { 
+    timestamps: true,
+    // ADD THIS - Enable virtuals in queries
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
+
+// ADD THESE VIRTUAL FIELDS - They were missing
+bookSchema.virtual('reviews', {
+  ref: 'Review',
+  localField: '_id',
+  foreignField: 'book',
+  justOne: false
+});
+
+bookSchema.virtual('readingLogs', {
+  ref: 'ReadingLog',
+  localField: '_id',
+  foreignField: 'book',
+  justOne: false
+});
 
 // Indexes for faster queries
 bookSchema.index({ title: 'text', author: 'text', description: 'text' });

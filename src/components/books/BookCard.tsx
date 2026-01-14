@@ -1,5 +1,5 @@
 // src/components/books/BookCard.tsx
-import { Star, BookOpen, Users } from 'lucide-react';
+import { Star, BookOpen, Users, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -13,7 +13,7 @@ interface BookCardProps {
     averageRating: number;
     totalReviews: number;
     totalShelves: number;
-    genre: string;
+    genre: string; // Changed from object to string
     pages: number;
   };
 }
@@ -62,12 +62,14 @@ export default function BookCard({ book }: BookCardProps) {
         
         <div className="flex gap-2">
           <Button asChild size="sm" className="flex-1">
-            <Link href={`/books/${book._id}`}>
+            {/* FIXED LINK HERE */}
+            <Link href={`/browse/${book._id}`}>
               View Details
             </Link>
           </Button>
-          <Button size="sm" variant="outline">
-            Add to Shelf
+          <Button size="sm" variant="outline" className="gap-1">
+            <Bookmark className="w-3 h-3" />
+            Save
           </Button>
         </div>
       </div>

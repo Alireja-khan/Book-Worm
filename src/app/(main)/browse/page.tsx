@@ -1,11 +1,13 @@
 // src/app/(main)/browse/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Search, Filter, Grid, List } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Search, Grid, List, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import BookCard from '@/components/books/BookCard';
+import BookFilters from '@/components/books/BookFilters';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface Book {
   _id: string;
@@ -16,16 +18,33 @@ interface Book {
   totalReviews: number;
   totalShelves: number;
   genre: {
+    _id: string;
     name: string;
   };
   pages: number;
 }
 
+interface Genre {
+  _id: string;
+  name: string;
+}
+
 export default function BrowseBooksPage() {
   const [books, setBooks] = useState<Book[]>([]);
+  const [genres, setGenres] = useState<Genre[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Filter states
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [minRating, setMinRating] = useState(0);
+  const [maxRating, setMaxRating] = useState(5);
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState('desc');
+  
+  // Pagination
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 12,
@@ -33,17 +52,34 @@ export default function BrowseBooksPage() {
     pages: 0,
   });
 
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 on search
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Fetch books when filters change
   useEffect(() => {
     fetchBooks();
-  }, [pagination.page]);
+  }, [debouncedSearch, selectedGenres, minRating, maxRating, sortBy, sortOrder, pagination.page]);
 
   const fetchBooks = async () => {
     try {
       setLoading(true);
+      
       const params = new URLSearchParams({
         page: pagination.page.toString(),
         limit: pagination.limit.toString(),
-        ...(search && { search }),
+        sortBy,
+        sortOrder,
+        minRating: minRating.toString(),
+        maxRating: maxRating.toString(),
+        ...(debouncedSearch && { search: debouncedSearch }),
+        ...(selectedGenres.length > 0 && { genres: selectedGenres.join(',') }),
       });
 
       const response = await fetch(`/api/books?${params}`);
@@ -51,6 +87,9 @@ export default function BrowseBooksPage() {
       
       if (data.success) {
         setBooks(data.data);
+        if (data.filters?.genres) {
+          setGenres(data.filters.genres);
+        }
         setPagination(data.pagination);
       }
     } catch (error) {
@@ -64,6 +103,36 @@ export default function BrowseBooksPage() {
     e.preventDefault();
     fetchBooks();
   };
+
+  const handleRatingChange = (min: number, max: number) => {
+    setMinRating(min);
+    setMaxRating(max);
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const handleGenreChange = (genres: string[]) => {
+    setSelectedGenres(genres);
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const handleSortChange = (newSortBy: string, newSortOrder: string) => {
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const clearAllFilters = () => {
+    setSearch('');
+    setDebouncedSearch('');
+    setSelectedGenres([]);
+    setMinRating(0);
+    setMaxRating(5);
+    setSortBy('createdAt');
+    setSortOrder('desc');
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const hasActiveFilters = selectedGenres.length > 0 || minRating > 0 || maxRating < 5 || sortBy !== 'createdAt';
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -91,11 +160,27 @@ export default function BrowseBooksPage() {
         </form>
 
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
-            <Filter className="w-4 h-4" />
-            Filters
-          </Button>
+          {/* Filters Button */}
+          <BookFilters
+            genres={genres}
+            selectedGenres={selectedGenres}
+            onGenreChange={handleGenreChange}
+            minRating={minRating}
+            maxRating={maxRating}
+            onRatingChange={handleRatingChange}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSortChange={handleSortChange}
+          />
           
+          {/* Clear Filters Button */}
+          {hasActiveFilters && (
+            <Button variant="outline" onClick={clearAllFilters}>
+              Clear All
+            </Button>
+          )}
+          
+          {/* View Toggle */}
           <div className="flex border border-border rounded-lg">
             <Button
               variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
@@ -117,6 +202,53 @@ export default function BrowseBooksPage() {
         </div>
       </div>
 
+      {/* Active Filters Display */}
+      {hasActiveFilters && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {selectedGenres.map(genreId => {
+            const genre = genres.find(g => g._id === genreId);
+            return (
+              <div
+                key={genreId}
+                className="flex items-center gap-1 px-3 py-1 bg-secondary text-secondary-foreground text-sm rounded-full"
+              >
+                {genre?.name}
+                <button
+                  onClick={() => handleGenreChange(selectedGenres.filter(id => id !== genreId))}
+                  className="ml-1 hover:text-destructive"
+                >
+                  ×
+                </button>
+              </div>
+            );
+          })}
+          {(minRating > 0 || maxRating < 5) && (
+            <div className="flex items-center gap-1 px-3 py-1 bg-secondary text-secondary-foreground text-sm rounded-full">
+              Rating: {minRating.toFixed(1)}-{maxRating.toFixed(1)} stars
+              <button
+                onClick={() => handleRatingChange(0, 5)}
+                className="ml-1 hover:text-destructive"
+              >
+                ×
+              </button>
+            </div>
+          )}
+          {sortBy !== 'createdAt' && (
+            <div className="flex items-center gap-1 px-3 py-1 bg-secondary text-secondary-foreground text-sm rounded-full">
+              Sort: {sortBy === 'rating' ? 'Rating' : 
+                     sortBy === 'popularity' ? 'Popularity' :
+                     sortBy === 'title' ? 'Title' : 'Author'}
+              <button
+                onClick={() => handleSortChange('createdAt', 'desc')}
+                className="ml-1 hover:text-destructive"
+              >
+                ×
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Books Grid */}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -134,9 +266,9 @@ export default function BrowseBooksPage() {
         </div>
       ) : books.length === 0 ? (
         <div className="text-center py-12">
-          <div className="text-muted-foreground mb-4">No books found</div>
-          <Button onClick={() => { setSearch(''); fetchBooks(); }}>
-            Clear Search
+          <div className="text-muted-foreground mb-4">No books found matching your filters</div>
+          <Button onClick={clearAllFilters}>
+            Clear All Filters
           </Button>
         </div>
       ) : (
@@ -147,7 +279,10 @@ export default function BrowseBooksPage() {
               : 'grid-cols-1'
           }`}>
             {books.map((book) => (
-              <BookCard key={book._id} book={book} />
+              <BookCard key={book._id} book={{
+                ...book,
+                genre: "book.genre.name" // Convert to string for BookCard
+              }} />
             ))}
           </div>
 

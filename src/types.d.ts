@@ -65,7 +65,7 @@ export interface IBook {
   author: string;
   description: string;
   coverImage: string;
-  genre: string | IGenre;
+  genre: string   ;
   pages: number;
   publicationYear: number;
   publisher?: string;
