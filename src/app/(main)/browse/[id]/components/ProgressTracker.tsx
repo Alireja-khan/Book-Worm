@@ -61,6 +61,11 @@ export default function ProgressTracker({
     await updateProgress(calculatedPage);
   };
 
+  const handleSliderValueChange = (value: number[]) => {
+    // Update slider value in real-time as user drags
+    setSliderValue(value[0]);
+  };
+
   const updateProgress = async (page: number) => {
     try {
       setIsUpdating(true);
@@ -221,7 +226,7 @@ export default function ProgressTracker({
               min={0}
               max={100}
               step={1}
-              onValueChange={setSliderValue}
+              onValueChange={handleSliderValueChange}
               onValueCommit={handleSliderChange}
               disabled={isUpdating}
               className="py-4"
