@@ -11,10 +11,16 @@ if(!mongodbUrl){
 console.log("mongo db not found")
 }
 
-let cached=global.mongoose
+import { Connection } from 'mongoose';
+
+declare global {
+  var mongoose: { conn: Connection | null; promise: Promise<Connection> | null; };
+}
+
+let cached = global.mongoose;
 
 if(!cached){
-    cached=global.mongoose={conn:null,promise:null}
+    cached=global.mongoose={conn:null,promise:null};
 }
 
 const connectDb=async ()=>{
@@ -24,14 +30,26 @@ if(cached.conn){
 }
 
 if(!cached.promise){
-    cached.promise = connect(mongodbUrl).then((c)=>c.connection)
+    const connectionOptions = {
+      bufferCommands: false,
+      bufferMaxEntries: 0,
+      serverSelectionTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+      maxIdleTimeMS: 30000,
+      connectTimeoutMS: 30000,
+      retryWrites: true,
+    };
+    cached.promise = connect(mongodbUrl, connectionOptions).then(mongoose => mongoose.connection);
 }
 
 try {
-    cached.conn=await cached.promise
-    console.log("db connected")
+    const connection = await cached.promise;
+    cached.conn = connection;
+    console.log("db connected");
 } catch (error) {
-    throw error
+    console.error('Database connection error:', error);
+    throw error;
 }
 
 return cached.conn
