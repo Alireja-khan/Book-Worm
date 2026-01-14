@@ -96,7 +96,7 @@ function Register() {
                     'Content-Type': 'multipart/form-data',
                 },
             })
-            
+
             // Auto-login after successful registration
             const loginResult = await signIn('credentials', {
                 email,
@@ -142,7 +142,7 @@ function Register() {
     return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-secondary/30">
             {/* LEFT -- REGISTER FORM */}
-            <div className="w-full max-w-md">
+            <div className="w-full max-w-xl">
                 {/* Logo/Brand Area */}
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold tracking-tight">Create your account</h1>
@@ -183,14 +183,14 @@ function Register() {
                                         </button>
                                     </div>
                                 ) : (
-                                    <div 
+                                    <div
                                         className="w-24 h-24 rounded-full bg-secondary/30 border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:bg-secondary/50 transition-colors"
                                         onClick={() => fileInputRef.current?.click()}
                                     >
                                         <User className="w-10 h-10 text-muted-foreground" />
                                     </div>
                                 )}
-                                
+
                                 <div className="flex flex-col items-center gap-2">
                                     <input
                                         type="file"
@@ -219,140 +219,149 @@ function Register() {
                             </div>
                         </div>
 
-                        {/* Name Input */}
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Full Name</Label>
-                            <div className="relative">
-                                <Input
-                                    id="name"
-                                    type="text"
-                                    placeholder="John Doe"
-                                    className="w-full pl-11"
-                                    onChange={(e) => setName(e.target.value)}
-                                    value={name}
-                                    required
-                                    disabled={isLoading}
-                                />
-                                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user">
-                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                                        <circle cx="12" cy="7" r="4" />
-                                    </svg>
+                        <div className='flex gap-15'>
+                            {/* Name Input */}
+                            <div className="space-y-2">
+                                <Label htmlFor="name">Full Name</Label>
+                                <div className="relative">
+                                    <Input
+                                        id="name"
+                                        type="text"
+                                        placeholder="John Doe"
+                                        className="w-full pl-11"
+                                        onChange={(e) => setName(e.target.value)}
+                                        value={name}
+                                        required
+                                        disabled={isLoading}
+                                    />
+                                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user">
+                                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                                            <circle cx="12" cy="7" r="4" />
+                                        </svg>
+                                    </div>
                                 </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Write you full name
+                                </p>
                             </div>
+
+                            {/* Password Input */}
+                            <div className="space-y-2">
+                                <Label htmlFor="password">Password</Label>
+                                <div className="relative">
+                                    <Input
+                                        id="password"
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="Create a strong password"
+                                        className="w-full pl-11 pr-12"
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        value={password}
+                                        required
+                                        disabled={isLoading}
+                                        minLength={6}
+                                    />
+                                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-lock">
+                                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                        </svg>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                        disabled={isLoading}
+                                    >
+                                        {showPassword ? (
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye-off">
+                                                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
+                                                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
+                                                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
+                                                <line x1="2" x2="22" y1="2" y2="22"></line>
+                                            </svg>
+                                        ) : (
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye">
+                                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        )}
+                                    </button>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Password must be at least 6 characters long
+                                </p>
+                            </div>
+
                         </div>
 
-                        {/* Email Input */}
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email address</Label>
-                            <div className="relative">
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="you@example.com"
-                                    className="w-full pl-11"
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    value={email}
-                                    required
-                                    disabled={isLoading}
-                                />
-                                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-mail">
-                                        <rect width="20" height="16" x="2" y="4" rx="2"></rect>
-                                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
-                                    </svg>
+                        <div className='flex gap-15'>
+
+                            {/* Email Input */}
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email address</Label>
+                                <div className="relative">
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        placeholder="you@example.com"
+                                        className="w-full pl-11"
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        value={email}
+                                        required
+                                        disabled={isLoading}
+                                    />
+                                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-mail">
+                                            <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                                        </svg>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Password Input */}
-                        <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
-                            <div className="relative">
-                                <Input
-                                    id="password"
-                                    type={showPassword ? "text" : "password"}
-                                    placeholder="Create a strong password"
-                                    className="w-full pl-11 pr-12"
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    value={password}
-                                    required
-                                    disabled={isLoading}
-                                    minLength={6}
-                                />
-                                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-lock">
-                                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
-                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                    </svg>
+                            {/* Confirm Password Input */}
+                            <div className="space-y-2">
+                                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                                <div className="relative">
+                                    <Input
+                                        id="confirmPassword"
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        placeholder="Confirm your password"
+                                        className="w-full pl-11 pr-12"
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        value={confirmPassword}
+                                        required
+                                        disabled={isLoading}
+                                        minLength={6}
+                                    />
+                                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-lock">
+                                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                        </svg>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                        disabled={isLoading}
+                                    >
+                                        {showConfirmPassword ? (
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye-off">
+                                                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
+                                                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
+                                                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
+                                                <line x1="2" x2="22" y1="2" y2="22"></line>
+                                            </svg>
+                                        ) : (
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye">
+                                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        )}
+                                    </button>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                                    disabled={isLoading}
-                                >
-                                    {showPassword ? (
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye-off">
-                                            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
-                                            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
-                                            <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
-                                            <line x1="2" x2="22" y1="2" y2="22"></line>
-                                        </svg>
-                                    ) : (
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye">
-                                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
-                                            <circle cx="12" cy="12" r="3"></circle>
-                                        </svg>
-                                    )}
-                                </button>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                Password must be at least 6 characters long
-                            </p>
-                        </div>
-
-                        {/* Confirm Password Input */}
-                        <div className="space-y-2">
-                            <Label htmlFor="confirmPassword">Confirm Password</Label>
-                            <div className="relative">
-                                <Input
-                                    id="confirmPassword"
-                                    type={showConfirmPassword ? "text" : "password"}
-                                    placeholder="Confirm your password"
-                                    className="w-full pl-11 pr-12"
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    value={confirmPassword}
-                                    required
-                                    disabled={isLoading}
-                                    minLength={6}
-                                />
-                                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-lock">
-                                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
-                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                    </svg>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                                    disabled={isLoading}
-                                >
-                                    {showConfirmPassword ? (
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye-off">
-                                            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
-                                            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
-                                            <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
-                                            <line x1="2" x2="22" y1="2" y2="22"></line>
-                                        </svg>
-                                    ) : (
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye">
-                                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
-                                            <circle cx="12" cy="12" r="3"></circle>
-                                        </svg>
-                                    )}
-                                </button>
                             </div>
                         </div>
 
