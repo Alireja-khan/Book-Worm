@@ -29,11 +29,13 @@ const authOptions: NextAuthOptions = {
                     throw new Error("incorrect Password")
                 }
 
+                // Return role so it can be encoded into the JWT/session
                 return {
                     id: user._id,
                     name: user.name,
                     email: user.email,
-                    image: user.image
+                    image: user.image,
+                    role: user.role
                 }
 
             },
@@ -59,19 +61,37 @@ const authOptions: NextAuthOptions = {
                         email: user?.email
                     })
                 }
+                // Attach DB id and role so jwt callback can include them
                 user.id = existUser._id as string
+                user.role = existUser.role
 
             }
             return true
         },
 
+
         async jwt({ token, user }) {
+            // If signing in right now, user will be present — persist fields into token
             if (user) {
                 token.id = user.id
                 token.name = user.name
                 token.email = user.email
                 token.image = user.image
+                token.role = (user as any).role
             }
+
+            // On subsequent requests user may be undefined — ensure token.role exists
+            if (!token.role && token.id) {
+                try {
+                    await connectDb()
+                    const dbUser = await User.findById(token.id).select('role')
+                    if (dbUser) token.role = dbUser.role
+                } catch (err) {
+                    // ignore DB errors here; tokens without role will just get role-less sessions
+                    console.error('JWT role hydration error:', err)
+                }
+            }
+
             return token
         },
 
@@ -81,6 +101,7 @@ const authOptions: NextAuthOptions = {
                 session.user.name = token.name
                 session.user.email = token.email
                 session.user.image = token.image as string
+                session.user.role = token.role as string
             }
             return session
         }

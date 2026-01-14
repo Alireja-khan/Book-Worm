@@ -60,7 +60,7 @@ export function Navbar() {
 
     // Regular user
     return [
-      { href: '/dashboard', label: 'Dashboard', icon: Home },
+      { href: '/', label: 'Dashboard', icon: Home },
       { href: '/browse', label: 'Browse Books', icon: BookOpen },
       { href: '/library', label: 'My Library', icon: Library },
       { href: '/tutorials', label: 'Tutorials', icon: Video }

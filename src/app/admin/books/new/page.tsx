@@ -1,10 +1,17 @@
-import React from "react"
+'use client';
+
+import { BookForm } from '@/components/admin/BookForm';
 
 export default function AdminNewBookPage() {
   return (
-    <div>
-      <h1 className="text-2xl font-semibold">Add New Book</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Form to add a new book.</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Add New Book</h1>
+        <p className="text-muted-foreground">
+          Add a new book to the library.
+        </p>
+      </div>
+      <BookForm />
     </div>
-  )
+  );
 }

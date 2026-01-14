@@ -1,5 +1,13 @@
-import React from "react"
+import { cn } from "@/lib/utils"
 
-export default function Skeleton({ className = "h-4 w-full bg-gray-200 rounded" }: { className?: string }) {
-  return <div className={className} />
+function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="skeleton"
+      className={cn("bg-accent animate-pulse rounded-md", className)}
+      {...props}
+    />
+  )
 }
+
+export { Skeleton }

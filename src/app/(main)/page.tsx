@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import Link from 'next/link';
+import AdminSidebar from '@/components/admin/AdminSidebar';
 import BookCard from '@/components/books/BookCard';
 import RecommendationsList from '@/components/dashboard/Recommendations';
 
@@ -116,11 +117,30 @@ export default function DashboardPage() {
     return Math.round(Math.min(Math.max(raw, 50), 98));
   };
 
+  const [adminStats, setAdminStats] = useState<{ totalBooks: number; totalUsers: number; pendingReviews: number } | null>(null);
+
   useEffect(() => {
     if (session) {
-      fetchDashboardData();
+      if (session.user?.role === 'admin') {
+        fetchAdminData();
+      } else {
+        fetchDashboardData();
+      }
     }
   }, [session]);
+
+  const fetchAdminData = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/admin/stats');
+      const data = await res.json();
+      if (data.success) setAdminStats(data.data);
+    } catch (err) {
+      console.error('Error fetching admin stats:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -185,6 +205,69 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-center h-64">
           <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  // If admin, render admin home content on the root page with an admin sidebar
+  if (session.user?.role === 'admin') {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <aside className="hidden lg:block">
+            <AdminSidebar />
+          </aside>
+
+          <main className="lg:col-span-3">
+            <div className="mb-8">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold mb-2">Admin Home — Welcome back, {session.user?.name}!</h1>
+                  <p className="text-muted-foreground">Overview and admin controls.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" asChild>
+                    <Link href="/">Open User Home</Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-4 border rounded bg-white dark:bg-gray-800">
+                <div className="text-sm text-muted-foreground">Total Books</div>
+                <div className="text-2xl font-bold mt-2">{adminStats ? adminStats.totalBooks : '-'}</div>
+                <div className="mt-3">
+                  <Link href="/admin/books" className="text-primary underline">Manage Books</Link>
+                </div>
+              </div>
+
+              <div className="p-4 border rounded bg-white dark:bg-gray-800">
+                <div className="text-sm text-muted-foreground">Total Users</div>
+                <div className="text-2xl font-bold mt-2">{adminStats ? adminStats.totalUsers : '-'}</div>
+                <div className="mt-3">
+                  <Link href="/admin/users" className="text-primary underline">Manage Users</Link>
+                </div>
+              </div>
+
+              <div className="p-4 border rounded bg-white dark:bg-gray-800">
+                <div className="text-sm text-muted-foreground">Pending Reviews</div>
+                <div className="text-2xl font-bold mt-2">{adminStats ? adminStats.pendingReviews : '-'}</div>
+                <div className="mt-3">
+                  <Link href="/admin/reviews?status=pending" className="text-primary underline">Moderate Reviews</Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <h2 className="text-lg font-medium">Quick Actions</h2>
+              <div className="mt-4 space-x-3">
+                <Link href="/admin/books/new" className="btn">Add New Book</Link>
+                <Link href="/admin/genres" className="btn">Manage Genres</Link>
+              </div>
+            </div>
+          </main>
         </div>
       </div>
     );

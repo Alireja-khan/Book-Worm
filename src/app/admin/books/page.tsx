@@ -1,10 +1,17 @@
-import React from "react"
+'use client';
+
+import { BookTable } from '@/components/admin/BookTable';
 
 export default function AdminBooksPage() {
   return (
-    <div>
-      <h1 className="text-2xl font-semibold">Admin: Books</h1>
-      <p className="mt-2 text-sm text-muted-foreground">List and manage books.</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Manage Books</h1>
+        <p className="text-muted-foreground">
+          View, edit, and delete books in the library.
+        </p>
+      </div>
+      <BookTable />
     </div>
-  )
+  );
 }
