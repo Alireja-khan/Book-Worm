@@ -66,6 +66,13 @@ interface ReadingStats {
 interface Recommendation {
   book: Book;
   reason: string;
+  reasonDetails?: {
+    matchedGenre?: string;
+    readCountForGenre?: number;
+    fallback?: boolean;
+    communityRating?: number;
+    popularity?: number;
+  };
   matchScore: number;
 }
 
