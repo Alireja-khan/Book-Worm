@@ -44,10 +44,12 @@ const readingLogSchema = new mongoose.Schema<IReadingLog>(
     currentPage: {
       type: Number,
       min: 0,
+      // FIXED: Use arrow function to preserve 'this' context from parent scope
       validate: {
-        // FIXED: Removed the explicit 'this' typing from the function
         validator: function (value: number) {
-          if (this.shelf === 'currently_reading') {
+          // Cast 'this' to any to bypass TypeScript's strict checking
+          const doc = this as any;
+          if (doc.shelf === 'currently_reading') {
             return value > 0;
           }
           return true;
@@ -87,7 +89,7 @@ readingLogSchema.index({ finishDate: -1 });
 // Middleware to calculate progress and handle shelf changes
 readingLogSchema.pre('save', async function (next) {
   try {
-    const doc = this as mongoose.Document & IReadingLog;
+    const doc = this as any;
     
     // Set start date when moving to currently_reading or read
     if (this.isModified('shelf') && !doc.startDate) {
@@ -99,8 +101,8 @@ readingLogSchema.pre('save', async function (next) {
     // Calculate progress percentage for currently reading books
     if (doc.shelf === 'currently_reading' && doc.currentPage) {
       const book = await mongoose.models.Book.findById(doc.book);
-      if (book && (book as any).pages && (book as any).pages > 0) {
-        const calculatedProgress = Math.round((doc.currentPage / (book as any).pages) * 100);
+      if (book && book.pages && book.pages > 0) {
+        const calculatedProgress = Math.round((doc.currentPage / book.pages) * 100);
         doc.progressPercentage = Math.min(calculatedProgress, 100);
         doc.status = 'reading';
       }
@@ -114,8 +116,8 @@ readingLogSchema.pre('save', async function (next) {
       // If currentPage is not set, try to get book pages
       if (!doc.currentPage) {
         const book = await mongoose.models.Book.findById(doc.book);
-        if (book && (book as any).pages) {
-          doc.currentPage = (book as any).pages;
+        if (book?.pages) {
+          doc.currentPage = book.pages;
         }
       }
       
@@ -134,12 +136,12 @@ readingLogSchema.pre('save', async function (next) {
     next();
   } catch (error) {
     console.error('Error in readingLog pre-save hook:', error);
-    next(error as mongoose.CallbackError);
+    next(error as any);
   }
 });
 
 // Post-save hook for activity logging
-readingLogSchema.post('save', async function (doc: IReadingLog & mongoose.Document) {
+readingLogSchema.post('save', async function (doc) {
   try {
     // Only log activity if this is a new log or shelf was modified
     if (this.isNew || this.isModified('shelf')) {
@@ -158,7 +160,7 @@ readingLogSchema.post('save', async function (doc: IReadingLog & mongoose.Docume
         await activityHelpers.logFinishedReading(
           doc.user.toString(),
           doc.book.toString(),
-          (book as any)?.pages
+          book?.pages
         );
       }
     }
@@ -177,7 +179,7 @@ readingLogSchema.post('save', async function (doc: IReadingLog & mongoose.Docume
 });
 
 // Post-remove hook to update book's totalShelves count
-readingLogSchema.post('findOneAndDelete', async function (doc: IReadingLog) {
+readingLogSchema.post('findOneAndDelete', async function (doc) {
   try {
     if (doc) {
       await mongoose.models.Book.findByIdAndUpdate(doc.book, {
