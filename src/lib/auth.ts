@@ -35,7 +35,7 @@ const authOptions: NextAuthOptions = {
                     name: user.name,
                     email: user.email,
                     image: user.image,
-                    role: user.role
+                    role: user.role as 'user' | 'admin' // Add type assertion here
                 }
 
             },
@@ -63,7 +63,7 @@ const authOptions: NextAuthOptions = {
                 }
                 // Attach DB id and role so jwt callback can include them
                 user.id = existUser._id as string
-                user.role = existUser.role
+                user.role = existUser.role as 'user' | 'admin' // Add type assertion here
 
             }
             return true
@@ -77,7 +77,7 @@ const authOptions: NextAuthOptions = {
                 token.name = user.name
                 token.email = user.email
                 token.image = user.image
-                token.role = (user as any).role
+                token.role = (user as any).role as 'user' | 'admin' // Add type assertion here
             }
 
             // On subsequent requests user may be undefined — ensure token.role exists
@@ -85,7 +85,7 @@ const authOptions: NextAuthOptions = {
                 try {
                     await connectDb()
                     const dbUser = await User.findById(token.id).select('role')
-                    if (dbUser) token.role = dbUser.role
+                    if (dbUser) token.role = dbUser.role as 'user' | 'admin' // Add type assertion here
                 } catch (err) {
                     // ignore DB errors here; tokens without role will just get role-less sessions
                     console.error('JWT role hydration error:', err)
@@ -101,7 +101,8 @@ const authOptions: NextAuthOptions = {
                 session.user.name = token.name
                 session.user.email = token.email
                 session.user.image = token.image as string
-                session.user.role = token.role as string
+                // FIX THIS LINE - add validation or type assertion
+                session.user.role = (token.role === 'admin' ? 'admin' : 'user')
             }
             return session
         }
