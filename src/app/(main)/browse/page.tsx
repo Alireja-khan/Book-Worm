@@ -136,13 +136,6 @@ export default function BrowseBooksPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Browse Books</h1>
-        <p className="text-muted-foreground">
-          Discover {pagination.total}+ books in our collection
-        </p>
-      </div>
 
       {/* Search & Filters */}
       <div className="flex flex-col md:flex-row gap-4 mb-8">

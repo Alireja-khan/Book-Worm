@@ -161,16 +161,10 @@ export default function AdminReviewsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Moderate Reviews</h1>
-        <p className="text-muted-foreground">
-          Review and moderate user-submitted book reviews.
-        </p>
-      </div>
       
       {/* Filters */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <Input

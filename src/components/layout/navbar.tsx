@@ -1,14 +1,21 @@
 'use client';
 
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
-import { Logo } from '@/components/shared/logo';
 import { useState, useRef, useEffect } from 'react';
-import { Menu, X, User, ChevronDown, LogOut, Home, BookOpen, Library, Video, Settings, Shield, Users, Star, BookCheck } from 'lucide-react';
+import { 
+  Menu, X, User, ChevronDown, LogOut, Shield, 
+  Home, BookOpen, Video, Library, Target, Users, 
+  Star, Heart, Settings, History, Bell, 
+  Folder, Tag, Download, Clock, BookCheck, 
+  BarChart3, TrendingUp, Globe, 
+  ChevronRight
+} from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -39,59 +46,114 @@ export function Navbar() {
     return session?.user?.name || session?.user?.email?.split('@')[0] || 'User';
   };
 
-  // Navigation items based on user role
-  const getNavItems = () => {
-    if (!session?.user) {
-      return [
-        { href: '/', label: 'Home', icon: Home }
-      ];
+  // Get current route name and icon for display
+  const getCurrentRouteInfo = () => {
+    const routeInfo: Record<string, { name: string; icon: React.ComponentType<{ className?: string }> }> = {
+      // Public routes
+      '/': { name: 'Home', icon: Home },
+      '/browse': { name: 'Browse Books', icon: BookOpen },
+      '/tutorials': { name: 'Tutorials', icon: Video },
+      '/login': { name: 'Sign In', icon: User },
+      '/register': { name: 'Register', icon: User },
+      
+      // User routes
+      '/dashboard': { name: 'Dashboard', icon: Home },
+      '/library': { name: 'My Library', icon: Library },
+      '/reading-goals': { name: 'Reading Goals', icon: Target },
+      '/community': { name: 'Community', icon: Users },
+      '/community/reviews': { name: 'Reviews', icon: Star },
+      '/community/discussions': { name: 'Discussions', icon: Users },
+      '/community/recommendations': { name: 'Recommendations', icon: Heart },
+      
+      // Profile routes
+      '/profile': { name: 'My Profile', icon: User },
+      '/profile/settings': { name: 'Settings', icon: Settings },
+      '/profile/reading-history': { name: 'Reading History', icon: History },
+      '/profile/notifications': { name: 'Notifications', icon: Bell },
+      '/profile/security': { name: 'Security', icon: Shield },
+      
+      // Admin routes
+      '/admin/dashboard': { name: 'Admin Dashboard', icon: Home },
+      '/admin/books': { name: 'Manage Books', icon: BookOpen },
+      '/admin/books/all': { name: 'All Books', icon: BookOpen },
+      '/admin/books/add': { name: 'Add New Book', icon: BookOpen },
+      '/admin/books/categories': { name: 'Book Categories', icon: Tag },
+      '/admin/books/import': { name: 'Import Books', icon: Download },
+      '/admin/genres': { name: 'Manage Genres', icon: Folder },
+      '/admin/genres/all': { name: 'All Genres', icon: Folder },
+      '/admin/genres/add': { name: 'Add New Genre', icon: Folder },
+      '/admin/users': { name: 'Manage Users', icon: Users },
+      '/admin/users/all': { name: 'All Users', icon: Users },
+      '/admin/users/add': { name: 'Add User', icon: Users },
+      '/admin/users/roles': { name: 'User Roles', icon: Shield },
+      '/admin/reviews': { name: 'Moderate Reviews', icon: Star },
+      '/admin/reviews/pending': { name: 'Pending Reviews', icon: Clock },
+      '/admin/reviews/approved': { name: 'Approved Reviews', icon: BookCheck },
+      '/admin/reviews/reported': { name: 'Reported Reviews', icon: Bell },
+      '/admin/analytics': { name: 'Analytics', icon: BarChart3 },
+      '/admin/analytics/overview': { name: 'Analytics Overview', icon: BarChart3 },
+      '/admin/analytics/books': { name: 'Book Analytics', icon: BookOpen },
+      '/admin/analytics/users': { name: 'User Analytics', icon: Users },
+      '/admin/analytics/revenue': { name: 'Revenue Analytics', icon: TrendingUp },
+      '/admin/settings': { name: 'Settings', icon: Settings },
+      '/admin/settings/general': { name: 'General Settings', icon: Settings },
+      '/admin/settings/appearance': { name: 'Appearance', icon: Globe },
+      '/admin/settings/notifications': { name: 'Notification Settings', icon: Bell },
+      '/admin/settings/backup': { name: 'Backup Settings', icon: Download },
+    };
+
+    // Try exact match first
+    if (routeInfo[pathname]) {
+      return routeInfo[pathname];
     }
 
-    if (isAdmin) {
-      return [
-        { href: '/admin/dashboard', label: 'Dashboard', icon: Home },
-        { href: '/admin/books', label: 'Manage Books', icon: BookOpen },
-        { href: '/admin/genres', label: 'Manage Genres', icon: Library },
-        { href: '/admin/users', label: 'Manage Users', icon: Users },
-        { href: '/admin/reviews', label: 'Moderate Reviews', icon: Star },
-        { href: '/admin/tutorials', label: 'Tutorials', icon: Video }
-      ];
+    // Try prefix match for nested routes
+    for (const [route, info] of Object.entries(routeInfo)) {
+      if (pathname.startsWith(route + '/')) {
+        return info;
+      }
     }
 
-    // Regular user
-    return [
-      { href: '/', label: 'Dashboard', icon: Home },
-      { href: '/browse', label: 'Browse Books', icon: BookOpen },
-      { href: '/library', label: 'My Library', icon: Library },
-      { href: '/tutorials', label: 'Tutorials', icon: Video }
-    ];
+    // Extract from pathname as fallback
+    const pathParts = pathname.split('/').filter(Boolean);
+    let icon = Home; // Default icon
+    let name = 'Page';
+
+    if (pathParts.length > 0) {
+      const lastPart = pathParts[pathParts.length - 1];
+      // Convert kebab-case to Title Case
+      name = lastPart
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+
+    return { name, icon };
   };
 
-  const navItems = getNavItems();
+  // Get current route info
+  const currentRoute = getCurrentRouteInfo();
+  const RouteIcon = currentRoute.icon;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
-        <div className="flex items-center gap-6">
-          <Logo />
-          <nav className="hidden md:flex items-center gap-4">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                  pathname === item.href || pathname.startsWith(item.href + '/')
-                    ? 'bg-primary/10 text-primary'
-                    : 'hover:bg-accent hover:text-accent-foreground'
-                }`}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+        {/* Left side: Current Route Name with Icon */}
+        <div className="flex items-center">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <RouteIcon className="h-5 w-5 text-primary" />
+              <div>
+                <h1 className="text-lg font-semibold">{currentRoute.name}</h1>
+                <p className="text-xs text-muted-foreground hidden sm:block">
+                  {isAdmin ? '' : session?.user ? '' : 'Book Reading Platform'}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
         
+        {/* Right side: Theme toggle and User dropdown */}
         <div className="flex items-center gap-3">
           <ThemeToggle />
           
@@ -142,7 +204,10 @@ export function Navbar() {
                       )}
                     </div>
                     <ChevronDown 
-                      className={`h-4 w-4 transition-transform ${isUserDropdownOpen ? 'rotate-180' : ''}`}
+                      className={cn(
+                        "h-4 w-4 transition-transform duration-200",
+                        isUserDropdownOpen && "rotate-180"
+                      )}
                     />
                   </div>
                 </button>
@@ -192,12 +257,12 @@ export function Navbar() {
                         </Link>
                       ) : (
                         <Link
-                          href="/dashboard"
+                          href="/"
                           className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent transition-colors"
                           onClick={() => setIsUserDropdownOpen(false)}
                         >
                           <Home className="h-4 w-4" />
-                          User Dashboard
+                          My Dashboard
                         </Link>
                       )}
                       
@@ -219,14 +284,6 @@ export function Navbar() {
                           >
                             <Library className="h-4 w-4" />
                             My Library
-                          </Link>
-                          <Link
-                            href="/reading-goals"
-                            className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent transition-colors"
-                            onClick={() => setIsUserDropdownOpen(false)}
-                          >
-                            <BookCheck className="h-4 w-4" />
-                            Reading Goals
                           </Link>
                         </>
                       )}
@@ -252,7 +309,6 @@ export function Navbar() {
                 </Button>
                 <Button size="sm" asChild>
                   <Link href="/register" className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4" />
                     Get Started
                   </Link>
                 </Button>
@@ -265,119 +321,87 @@ export function Navbar() {
       {/* Mobile menu */}
       {isMenuOpen && (
         <div className="md:hidden border-t bg-background animate-in slide-in-from-top duration-200">
-          <div className="px-4 py-4 space-y-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-3 py-3 text-base font-medium rounded-lg transition-colors ${
-                  pathname === item.href || pathname.startsWith(item.href + '/')
-                    ? 'bg-primary/10 text-primary'
-                    : 'hover:bg-accent hover:text-accent-foreground'
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <item.icon className="h-5 w-5" />
-                {item.label}
-              </Link>
-            ))}
-            
-            <div className="pt-4 border-t space-y-3">
-              {session?.user ? (
-                <>
-                  <div className="px-3 py-3 rounded-lg bg-accent/50 flex items-center gap-3">
-                    {session.user.image ? (
-                      <div className="relative h-12 w-12 rounded-full overflow-hidden border flex-shrink-0">
-                        <Image
-                          src={session.user.image}
-                          alt={getUserDisplayName()}
-                          fill
-                          className="object-cover"
-                          sizes="48px"
-                        />
-                      </div>
-                    ) : (
-                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center border flex-shrink-0">
-                        <User className="h-6 w-6 text-primary" />
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{getUserDisplayName()}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {session.user.email}
-                      </p>
-                      {isAdmin && (
-                        <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
-                          <Shield className="h-3 w-3" />
-                          Admin
-                        </span>
-                      )}
+          <div className="px-4 py-4 space-y-3">
+            {session?.user ? (
+              <>
+                <div className="px-3 py-3 rounded-lg bg-accent/50 flex items-center gap-3">
+                  {session.user.image ? (
+                    <div className="relative h-12 w-12 rounded-full overflow-hidden border flex-shrink-0">
+                      <Image
+                        src={session.user.image}
+                        alt={getUserDisplayName()}
+                        fill
+                        className="object-cover"
+                        sizes="48px"
+                      />
                     </div>
-                  </div>
-                  
-                  <Link
-                    href="/profile"
-                    className="flex items-center gap-3 px-3 py-3 text-base font-medium rounded-lg hover:bg-accent transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <User className="h-5 w-5" />
-                    Profile
-                  </Link>
-                  
-                  {!isAdmin && (
-                    <>
-                      <Link
-                        href="/reading-goals"
-                        className="flex items-center gap-3 px-3 py-3 text-base font-medium rounded-lg hover:bg-accent transition-colors"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <BookCheck className="h-5 w-5" />
-                        Reading Goals
-                      </Link>
-                    </>
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center border flex-shrink-0">
+                      <User className="h-6 w-6 text-primary" />
+                    </div>
                   )}
-                  
-                  <Button 
-                    variant="destructive" 
-                    className="w-full mt-2" 
-                    size="lg"
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      handleLogout();
-                    }}
-                  >
-                    <LogOut className="h-5 w-5 mr-2" />
-                    Logout
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button 
-                    variant="outline" 
-                    className="w-full" 
-                    size="lg" 
-                    asChild
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Link href="/login" className="flex items-center justify-center gap-2">
-                      <User className="h-5 w-5" />
-                      Sign In
-                    </Link>
-                  </Button>
-                  <Button 
-                    className="w-full" 
-                    size="lg" 
-                    asChild
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Link href="/register" className="flex items-center justify-center gap-2">
-                      <BookOpen className="h-5 w-5" />
-                      Get Started
-                    </Link>
-                  </Button>
-                </>
-              )}
-            </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{getUserDisplayName()}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {session.user.email}
+                    </p>
+                    {isAdmin && (
+                      <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
+                        <Shield className="h-3 w-3" />
+                        Admin
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-3 px-3 py-3 text-base font-medium rounded-lg hover:bg-accent transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <User className="h-5 w-5" />
+                  Profile
+                </Link>
+                
+                <Button 
+                  variant="destructive" 
+                  className="w-full mt-2" 
+                  size="lg"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    handleLogout();
+                  }}
+                >
+                  <LogOut className="h-5 w-5 mr-2" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant="outline" 
+                  className="w-full" 
+                  size="lg" 
+                  asChild
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Link href="/login" className="flex items-center justify-center gap-2">
+                    <User className="h-5 w-5" />
+                    Sign In
+                  </Link>
+                </Button>
+                <Button 
+                  className="w-full" 
+                  size="lg" 
+                  asChild
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Link href="/register" className="flex items-center justify-center gap-2">
+                    Get Started
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}

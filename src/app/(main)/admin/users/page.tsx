@@ -199,12 +199,6 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Manage Users</h1>
-          <p className="text-muted-foreground">
-            View and manage user accounts and roles.
-          </p>
-        </div>
         <Dialog open={open} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
             <Button onClick={() => setOpen(true)}>

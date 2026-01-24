@@ -27,7 +27,6 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import Link from 'next/link';
-import AdminSidebar from '@/components/admin/AdminSidebar';
 import BookCard from '@/components/books/BookCard';
 import RecommendationsList from '@/components/dashboard/Recommendations';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
@@ -262,27 +261,10 @@ export default function DashboardPage() {
   // If admin, render enhanced admin dashboard on the root page
   if (session.user?.role === 'admin') {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <aside className="hidden lg:block">
-            <AdminSidebar />
-          </aside>
+      <div className="max-w-7xl mx-auto py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           <main className="lg:col-span-3">
-            {/* Header */}
-            <div className="mb-8">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-                  <p className="text-muted-foreground">Welcome back, {session.user?.name}! Here&apos;s what&apos;s happening with your library today.</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="outline" asChild>
-                    <Link href="/">Open User Home</Link>
-                  </Button>
-                </div>
-              </div>
-            </div>
 
             {/* Overview Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -457,32 +439,6 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Welcome Header */}
-      <div className="mb-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">
-              Welcome back, {session.user?.name}!
-            </h1>
-            <p className="text-muted-foreground">
-              Here is what is happening with your reading journey
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="gap-1">
-              <Sparkles className="w-3 h-3" />
-              Day {stats.currentStreak} Streak
-            </Badge>
-            <Button size="sm" variant="outline" asChild>
-              <Link href="/library">
-                View Full Library
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card>
