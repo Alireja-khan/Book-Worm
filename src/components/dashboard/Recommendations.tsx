@@ -32,12 +32,11 @@ export default function Recommendations({ recommendations }: { recommendations: 
           <div className="relative w-full h-40 mb-3 rounded overflow-hidden">
             <Image src={rec.book.coverImage} alt={rec.book.title} fill className="object-cover" sizes="200px" />
           </div>
-          <Link href={`/browse/${rec.book._id}`} className="font-medium line-clamp-2 hover:text-primary">
+          <Link href={`/browse/${rec.book._id}`} className="font-medium line-clamp-2 truncate hover:text-primary">
             {rec.book.title}
           </Link>
           <p className="text-xs text-muted-foreground">by {rec.book.author}</p>
           <div className="flex items-center gap-2 mt-2">
-            <Badge variant="secondary" className="text-xs">{rec.book.genre?.name}</Badge>
             <div className="flex items-center gap-1 text-xs">
               <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
               <span className="font-medium">{(rec.book.averageRating || 0).toFixed(1)}</span>
